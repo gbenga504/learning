@@ -1,0 +1,22 @@
+{
+  "name": "museum-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsx index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "chalk": "^6.0.0",
+    "ollama": "^0.6.3"
+  }
+}
