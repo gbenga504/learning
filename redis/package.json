@@ -1,0 +1,14 @@
+{
+  "name": "redis-examples",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cache": "node cache.js",
+    "pub": "node pubsub-publisher.js",
+    "sub": "node pubsub-subscriber.js"
+  },
+  "dependencies": {
+    "redis": "^4.7.0"
+  }
+}

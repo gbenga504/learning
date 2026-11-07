@@ -2,14 +2,10 @@ import ollama, { Tool as OllamaTool } from "ollama";
 import { browser } from "../browser/browser";
 import z from "zod";
 import chalk from "chalk";
-import { marked } from "marked";
-import { markedTerminal } from "marked-terminal";
 import ansiEscapes from "ansi-escapes";
 import stringWidth from "string-width";
+import { renderMarkdownToAnsi } from "./markdown-renderer";
 
-marked.use(markedTerminal() as any);
-
-const RENDER_THROTTLE_MS = 80;
 type Tool = Pick<OllamaTool, "type"> & {
   function: OllamaTool["function"] & {
     call: (args: unknown) => Promise<unknown>;
@@ -29,20 +25,6 @@ class LLMProvider {
   ];
   private lastRenderedLineCount = 0;
 
-  throttle(callback: Function, limit: number) {
-    let lastRunAt = 0;
-
-    return (...args: any[]) => {
-      const now = Date.now();
-
-      if (now - lastRunAt >= limit) {
-        callback(args);
-
-        lastRunAt = now;
-      }
-    };
-  }
-
   private getTerminalRowsForText(text: string): number {
     const columns = process.stdout.columns || 80;
 
@@ -57,18 +39,6 @@ class LLMProvider {
     this.chatHistory = [...this.chatHistory, { role: "user", content: prompt }];
 
     await this.runAgenticLoop({ model });
-  }
-
-  private renderMarkdownFrame(markdownText: string): void {
-    const rendered = marked.parse(markdownText) as string;
-
-    if (this.lastRenderedLineCount > 0) {
-      process.stdout.write(ansiEscapes.eraseLines(this.lastRenderedLineCount));
-    }
-
-    process.stdout.write(rendered);
-
-    this.lastRenderedLineCount = this.getTerminalRowsForText(rendered);
   }
 
   async runAgenticLoop({ model }: { model: string }): Promise<void> {
@@ -86,10 +56,6 @@ class LLMProvider {
 
     let isStreamingThought = false;
     let fullResponseText = "";
-
-    const throttledRenderMarkdownFrame = this.throttle(() => {
-      this.renderMarkdownFrame(fullResponseText);
-    }, RENDER_THROTTLE_MS);
 
     for await (const chunk of response) {
       if (chunk.message.thinking) {
@@ -111,7 +77,8 @@ class LLMProvider {
         }
 
         fullResponseText += chunk.message.content;
-        throttledRenderMarkdownFrame(fullResponseText);
+        process.stdout.write(chunk.message.content);
+        this.lastRenderedLineCount = this.getTerminalRowsForText(fullResponseText);
       }
 
       if (chunk.message.tool_calls && chunk.message.tool_calls.length > 0) {
@@ -154,7 +121,13 @@ class LLMProvider {
 
       if (chunk.done) {
         if (fullResponseText) {
-          this.renderMarkdownFrame(fullResponseText);
+          if (this.lastRenderedLineCount > 0) {
+            process.stdout.write(
+              ansiEscapes.eraseLines(this.lastRenderedLineCount),
+            );
+          }
+
+          process.stdout.write(renderMarkdownToAnsi(fullResponseText));
           this.lastRenderedLineCount = 0;
         }
 

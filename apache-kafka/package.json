@@ -1,0 +1,18 @@
+{
+  "name": "kafka-examples",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "node kafka/setup-topic.js",
+    "produce": "node kafka/booking-producer.js",
+    "invoice": "node kafka/services/invoice-service.js",
+    "email": "node kafka/services/email-service.js",
+    "dlq": "node kafka/dlq-viewer.js",
+    "lag": "node kafka/lag.js",
+    "reset": "node kafka/reset-offsets.js"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  }
+}
